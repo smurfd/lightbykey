@@ -26,9 +26,14 @@ if dev:
   print(hex(dev.idVendor), hex(dev.idProduct))
   print(hex(get_lightbykey_item(dev.idVendor)), hex(get_lightbykey_item(dev.idProduct)))
   print(hex(get_lightbykey_ven(dev)), hex(get_lightbykey_pro(dev)))
+  #dev.set_configuration()
 
   #dev1 = usb.core.find(idVendor=0x1050, idProduct=0x402)
   #print(dev1)
+  #dev.attach_kernel_driver(0)#interface)
+  print(dev.is_kernel_driver_active(0))
+  if dev.is_kernel_driver_active(0):
+    dev.detach_kernel_driver(0)
   try:
     usb.util.claim_interface(dev, 0)
   except usb.core.USBError:
