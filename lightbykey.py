@@ -40,9 +40,23 @@ def close_lightbykey(dev, reattach):
   if reattach:
     dev.attach_kernel_driver(0)
 
+def write_stuff(dev):
+  cfg = dev.get_active_configuration()
+  interface_number = cfg[(0,0)].bInterfaceNumber
+  alternate_setting = usb.control.get_interface(dev, interface_number)
+  intf = usb.util.find_descriptor(cfg, bInterfaceNumber = interface_number, bAlternateSetting = alternate_setting)
+
+  ep = usb.util.find_descriptor(intf,custom_match = lambda e: \
+    usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT)
+  ep.write("test")
+
 dev = get_lightbykey_dev()
 if dev:
   print(dev)
   print(hex(get_lightbykey_ven(dev)), hex(get_lightbykey_pro(dev)))
   reattach = claim_lightbykey(dev)
+  write_stuff(dev)
   close_lightbykey(dev, reattach)
+  print("OK")
+else:
+  print("Ruhroh!")
