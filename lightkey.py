@@ -32,13 +32,14 @@ def claim_lightbykey(dev):
   try:
     usb.util.claim_interface(dev, 0)
   except usb.core.USBError:
-    print("Access denied") #this should work, issue on mac with libusb
+    print("Access denied")
   return reattach
 
 def close_lightbykey(dev, reattach):
   usb.util.dispose_resources(dev)
   if reattach:
     dev.attach_kernel_driver(0)
+    dev.close()
 
 def write_stuff(dev):
   cfg = dev.get_active_configuration()
@@ -50,11 +51,22 @@ def write_stuff(dev):
     usb.util.endpoint_direction(e.bEndpointAddress) == usb.util.ENDPOINT_OUT)
   ep.write("test")
 
+def read_stuff(dev):
+  try:
+    data = dev.read(0x84, 0x40, 1000)
+  except usb.core.USBError as e:
+    print ("Error reading response: {}".format(e.args))
+    return None
+  byte_str = ''.join(chr(n) for n in data[1:]) # construct a string out of the read values, starting from the 2nd byte
+  result_str = byte_str.split('\x00',1)[0] # remove the trailing null '\x00' characters
+  print("READ", result_str)
+
 dev = get_lightbykey_dev()
 if dev:
   print(dev)
   print(hex(get_lightbykey_ven(dev)), hex(get_lightbykey_pro(dev)))
   reattach = claim_lightbykey(dev)
+  read_stuff(dev)
   write_stuff(dev)
   close_lightbykey(dev, reattach)
   print("OK")
