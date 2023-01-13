@@ -13,3 +13,8 @@ python3 -c "import ctypes.util; print(ctypes.util.find_library('usb'))"
 ```
 If you are on a mac it should point you to a .dylib
 if on linux you should see the path to a .so file
+
+Run
+```
+$ sudo python3 lightkey.py
+```
