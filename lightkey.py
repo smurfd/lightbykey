@@ -43,7 +43,8 @@ def key_endpoint(dev, type):
 
 def key_write(dev):
   ep = key_endpoint(dev, usb.util.ENDPOINT_OUT)
-  ep.write("test")
+  data = b"\x06\x00\x00"
+  ep.write(data, timeout=6000)
 
 def key_read(dev):
   ep = key_endpoint(dev, usb.util.ENDPOINT_IN)
@@ -53,12 +54,40 @@ def key_read(dev):
   except usb.core.USBError as e:
     print ("Error reading response: {}".format(e.args))
 
+def key_r(dev):
+  rt = (0x01 << 5) | 0x1 | 0x84
+  val = 0x03 << 8
+  #r = dev.ctrl_transfer(hex(rt), 0x1, 8, val, timeout = 2000)
+  print(dev)
+  co = 1
+  #dev.ctrl_transfer(rt, co, 8, 0, "")
+  r = dev.ctrl_transfer(0, 3, 8, val, 6)
+
+def key_rr(dev):
+  ep = key_endpoint(dev, usb.util.ENDPOINT_OUT)
+  er = key_endpoint(dev, usb.util.ENDPOINT_IN)
+
+  data = b"\x06\x00\x00"
+  s = ep.write(data, timeout=6000)
+  if s % 64 == 0:
+     p.write(b"", timeout=6000)
+  #return bytes(er.read(0xFFFF, timeout=6000))
+
+def key_await(dev):
+  done = False
+  sleep = 0.1
+  wait = (2 * 2) - 1 + 6
+  while not done:
+    time.sleep(sleep)
+
 dev = key_get()
 if dev:
   reattach = key_claim(dev)
+  key_rr(dev)
   key_write(dev)
-  time.sleep(3)
-  key_read(dev) # times out!? i need to poke it in special spot?
+  #time.sleep(3)
+  #key_r(dev)
+  #key_read(dev) # times out!? i need to poke it in special spot?
   key_close(dev, reattach)
   print("OK")
 else:
