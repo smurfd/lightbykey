@@ -12,13 +12,13 @@ def key_get():
       return d
   return None
 
-def key_claim(dev):
-  reattach = False
-  dev.set_configuration()
-  if dev.is_kernel_driver_active(0):
-    dev.detach_kernel_driver(0)
-    print(dev.is_kernel_driver_active(0))
-    reattach = True
+def key_claim(dev, reattach = False):
+  if not reattach:
+    dev.set_configuration()
+    if dev.is_kernel_driver_active(0):
+      dev.detach_kernel_driver(0)
+      if not dev.is_kernel_driver_active(0):
+        reattach = True
   try:
     usb.util.claim_interface(dev, 0)
   except usb.core.USBError:
@@ -28,8 +28,13 @@ def key_claim(dev):
 def key_close(dev, reattach):
   usb.util.dispose_resources(dev)
   if reattach:
+    try:
+      dev.close()
+    except AttributeError as e:
+      print("ignore first close")
+  else:
     dev.attach_kernel_driver(0)
-    dev.close()
+
 
 def key_endpoint(dev, type):
   cfg = dev.get_active_configuration()
@@ -52,7 +57,7 @@ def key_read(dev):
     r = ep.read(1, timeout=6000)
     print("READ", r)
   except usb.core.USBError as e:
-    print ("Error reading response: {}".format(e.args))
+    print("Error reading response: {}".format(e.args))
 
 def key_r(dev):
   rt = (0x01 << 5) | 0x1 | 0x84
@@ -83,7 +88,7 @@ def key_await(dev):
 dev = key_get()
 if dev:
   reattach = key_claim(dev)
-  key_rr(dev)
+  #key_rr(dev)
   key_write(dev)
   #time.sleep(3)
   #key_r(dev)
