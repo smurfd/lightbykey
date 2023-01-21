@@ -35,7 +35,6 @@ def key_close(dev, reattach):
   else:
     dev.attach_kernel_driver(0)
 
-
 def key_endpoint(dev, type):
   cfg = dev.get_active_configuration()
   ifnr = cfg[(0,0)].bInterfaceNumber
@@ -56,17 +55,14 @@ def key_read(dev):
   try:
     r = ep.read(1, timeout=6000)
     print("READ", r)
-  except usb.core.USBError as e:
-    print("Error reading response: {}".format(e.args))
+  except usb.core.USBTimeoutError as e:
+    print("Error reading response:", e.args)
 
 def key_r(dev):
   rt = (0x01 << 5) | 0x1 | 0x84
   val = 0x03 << 8
-  #r = dev.ctrl_transfer(hex(rt), 0x1, 8, val, timeout = 2000)
-  print(dev)
+  r = dev.ctrl_transfer(hex(rt), 0x3, 8, 0, timeout = 2000)
   co = 1
-  #dev.ctrl_transfer(rt, co, 8, 0, "")
-  r = dev.ctrl_transfer(0, 3, 8, val, 6)
 
 def key_rr(dev):
   ep = key_endpoint(dev, usb.util.ENDPOINT_OUT)
@@ -76,7 +72,12 @@ def key_rr(dev):
   s = ep.write(data, timeout=6000)
   if s % 64 == 0:
      p.write(b"", timeout=6000)
-  #return bytes(er.read(0xFFFF, timeout=6000))
+  r = 0
+  try:
+    r = er.read(0xFFFF, timeout=6000)
+  except usb.core.USBTimeoutError as e:
+    print("Error reading response:", e.args)
+  return bytes(r)
 
 def key_await(dev):
   done = False
@@ -88,8 +89,8 @@ def key_await(dev):
 dev = key_get()
 if dev:
   reattach = key_claim(dev)
-  #key_rr(dev)
   key_write(dev)
+  key_rr(dev)
   #time.sleep(3)
   #key_r(dev)
   #key_read(dev) # times out!? i need to poke it in special spot?
