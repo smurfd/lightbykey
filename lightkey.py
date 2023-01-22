@@ -13,9 +13,9 @@ def key_device():
   return None
 
 def key_claim(dev, reattach = False):
+  dev.detach_kernel_driver(0)
   if not reattach:
     if dev.is_kernel_driver_active(0):
-      dev.detach_kernel_driver(0)
       if not dev.is_kernel_driver_active(0): reattach = True
   try: usb.util.claim_interface(dev, 0)
   except usb.core.USBError: print("Access denied")
@@ -52,11 +52,9 @@ def key_read(dev):
 def key_r(dev):
   rt = (0x01 << 5) | 0x1 | 0x84
   val = 0x03 << 8
-  rx = 1
   r = dev.ctrl_transfer(rt, 1, 0x200, 0x00, 64, timeout=2000)
-  co = 1
   print(r)
-  print(rx)
+
 
 def key_type(type):
   return usb.util.build_request_type(type, usb.util.CTRL_TYPE_CLASS, usb.util.CTRL_RECIPIENT_INTERFACE)
@@ -94,13 +92,6 @@ def main():
     time.sleep(0.6)
     reattach = key_claim(dev)
     key_write(dev)
-    #ret = key_rr(dev)
-    #key_await(dev)
-    #print("report:",hid_get_report(dev))
-    #hid_set_report(dev, struct.pack("II", 6, 6000))
-    #print("set")
-    #ret = key_rr(dev)
-    #time.sleep(3)
     print("before set")
     key_setreport(dev)
     time.sleep(1)
