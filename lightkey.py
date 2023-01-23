@@ -111,3 +111,20 @@ def main():
   else: print("Ruhroh!")
 
 if __name__=="__main__": main()
+
+# Data from IORegistryExplorer
+
+# PrimaryUsagePage
+# 0xf1d0
+
+# LocationID
+# 0x2100000
+
+# IOUserServerHash
+# df1b771842713b880a69fa6317455b7bcc52ba7f
+
+# kOSBundleDextUniqueIdentifier
+# <b7 96 d1 5d 93 54 ea e8 26 f3 70 c7 8d a5 a6 9a 01 07 35 2f 2c 06 43 53 23 1d 0e fe c8 90 df 26>
+
+# Report descriptor
+# <06 d0 f1 09 01 a1 01 09 20 15 00 26 ff 00 75 08 95 40 81 02 09 21 15 00 26 ff 00 75 08 95 40 91 02 c0>
