@@ -41,7 +41,8 @@ def key_endpoint(dev, type):
 def key_write(dev):
   ep = key_endpoint(dev, usb.util.ENDPOINT_OUT)
   data = b"\x06\x00\x00"
-  ep.write(data, timeout=6000)
+
+  ep.write(struct.pack("II", len(data), 3), timeout=6000)
 
 def key_read(dev):
   ep = key_endpoint(dev, usb.util.ENDPOINT_IN)
@@ -53,8 +54,7 @@ def key_r(dev):
   rt = (0x01 << 5) | 0x1 | 0x84
   val = 0x03 << 8
   r = dev.ctrl_transfer(rt, 1, 0x200, 0x00, 64, timeout=2000)
-  print(r)
-
+  print("wrote", r)
 
 def key_type(type):
   return usb.util.build_request_type(type, usb.util.CTRL_TYPE_CLASS, usb.util.CTRL_RECIPIENT_INTERFACE)
@@ -69,7 +69,7 @@ def key_rr(dev):
   data = b"\x06\x00\x00"
   eo = key_endpoint(dev, usb.util.ENDPOINT_OUT)
   ei = key_endpoint(dev, usb.util.ENDPOINT_IN)
-  s = eo.write(data, timeout=6000)
+  s = eo.write(struct.pack("II", len(data), 3), timeout=6000)
   if s % 64 == 0: eo.write(b"", timeout=6000)
   try: return bytes(ei.read(0xFFFF, timeout=6000))
   except usb.core.USBTimeoutError as e: print("Error reading response:", e.args)
