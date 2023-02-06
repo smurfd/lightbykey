@@ -15,15 +15,14 @@ const static int KEY[5] = {0x02, 0x82, 0x02, 0x1050, 0x0407};
 // IF, IN, OUT, VEN, PRD
 
 int error(char *s, int r) {
-  if (r != 0) {printf("Cant %s dev\n", s); exit(0);} return 0;
+  if (r != 0) {printf("Cant %s dev\n", s); return -1;} return 0;
 }
 
 int initdev() {return error("initialize", libusb_init(NULL));}
 
-usbdev *opendev() {
-  usbdev *dev = libusb_open_device_with_vid_pid(NULL, KEY[3], KEY[4]);
-  if (!dev) {error("open", -1);}
-  return dev;
+int opendev(usbdev **dev) {
+  (*dev) = libusb_open_device_with_vid_pid(NULL, KEY[3], KEY[4]);
+  if (!dev) {return error("open", -1);} else return 0;
 }
 
 int claimdev(usbdev *dev) {
@@ -31,12 +30,10 @@ int claimdev(usbdev *dev) {
   return error("open", libusb_claim_interface(dev, KEY[0]));
 }
 
-int resetdev(usbdev *dev) {
-  int ret = libusb_reset_device(dev);
-  usleep(10000);
+int resetdev(usbdev *dev, int ret) {
+  ret |= libusb_reset_device(dev);
   ret |= libusb_clear_halt(dev, KEY[2]);
   ret |= libusb_clear_halt(dev, KEY[1]);
-  usleep(10000);
   return ret;
 }
 
@@ -52,19 +49,24 @@ int releasedev(usbdev *dev) {
   return error("release", libusb_release_interface(dev, KEY[0]));
 }
 
+void printdev(int wrtnr, char *d) {
+  printf("data: %d : %x : %x\n", wrtnr, d[0], d[1]);
+  for (int i=0; i < 64; i++) {printf("0x%x ", d[i]);} printf("\n");
+}
+
 int main() {
   char wrt[128] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x8f}, rd[128] = {0};
   int ret = 0, wrtnr;
+  usbdev *dev = NULL;
 
   ret |= initdev();
-  usbdev *dev = opendev();
+  ret |= opendev(&dev);
   ret |= claimdev(dev);
-  ret |= resetdev(dev);
+  ret |= resetdev(dev, ret);
   ret |= writedev(dev, wrt, &wrtnr);
   ret |= readdev(dev, rd, &wrtnr);
-  printf("ret = %d\n", ret);
-  printf("data: %d : %x : %x\n", wrtnr, rd[0], rd[1]);
-  for (int i=0; i < 64; i++) {printf("0x%x ", rd[i]);} printf("\n");
   ret |= releasedev(dev);
-  if (!ret) printf("Read / Write : OK\n");
+  printdev(wrtnr, rd);
+
+  if (!ret) {printf("OK\n");} else {printf("ruhroh!\n");}
 }
