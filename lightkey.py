@@ -13,9 +13,9 @@ def claimdev(dev, ifnr = 0, att = False):
     if dev.is_kernel_driver_active(ifnr):
       if not dev.is_kernel_driver_active(ifnr): att = True
   try: usb.util.claim_interface(dev, ifnr)
-  except usb.core.USBError: print("Access denied");
+  except usb.core.USBError: print("Access denied"); return -1;
   dev.set_configuration()
-  return att
+  return 0
 
 def closedev(dev, ifnr = 0, att = False):
   usb.util.dispose_resources(dev)
@@ -59,13 +59,16 @@ def setdevreport(dev):
 
 def main():
   dev = initdev()
+  att = False
+  ret = 0
   if dev:
-    att = claimdev(dev, ifnr = 2)
+    ret |= claimdev(dev, ifnr = 2, att=att)
     writedev(dev)
     print("read =", readdev(dev))
     print("report =", getreportdev(dev))
-    closedev(dev, 2, att)
-    print("OK")
+    ret |= closedev(dev, 2, att)
+    if not ret: print("OK")
+    else: print("not ok")
   else: print("Ruhroh!")
 
 if __name__=="__main__": main()
