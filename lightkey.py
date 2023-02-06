@@ -2,8 +2,7 @@ import sys, time, struct
 import usb.core, usb.util
 
 def initdev():
-  dev = usb.core.find(find_all=True) # find all usb devices
-  for d in dev: # Look specificly for Yubico keys
+  for d in usb.core.find(find_all=True): # Look specificly for Yubico keys
     if usb.util.get_string(d, d.iManufacturer) == "Yubico": return d
   return None
 
@@ -29,20 +28,18 @@ def closedev(dev, ifnr = 0, att = False):
 def getdevept(dev, type):
   cfg = dev.get_active_configuration()
   ifnr = cfg[(2,0)].bInterfaceNumber
-  alt = usb.control.get_interface(dev, ifnr)
-  intf = usb.util.find_descriptor(cfg, bInterfaceNumber = ifnr,
-    bAlternateSetting = alt)
-  return usb.util.find_descriptor(intf, custom_match = lambda e:
-    usb.util.endpoint_direction(e.bEndpointAddress) == type)
+  return usb.util.find_descriptor(usb.util.find_descriptor(
+    cfg, bInterfaceNumber = ifnr, bAlternateSetting = usb.control.get_interface(
+    dev, ifnr)), custom_match = lambda e: usb.util.endpoint_direction(
+      e.bEndpointAddress) == type)
 
 def writedev(dev):
-  ep = getdevept(dev, usb.util.ENDPOINT_OUT)
-  data = b"\x06\x00\x00"
-  return ep.write(struct.pack("II", len(data), 3), timeout=6000)
+  return getdevept(dev, usb.util.ENDPOINT_OUT).write(struct.pack(
+    "II", len(b"\x06\x00\x00"), 3), timeout=6000)
 
 def readdev(dev):
-  ep = getdevept(dev, usb.util.ENDPOINT_IN)
-  try: return ep.read(0x40, timeout=6000)
+  try: return [hex(r) for r in getdevept(
+    dev, usb.util.ENDPOINT_IN).read(0x40, timeout=6000)]
   except usb.core.USBTimeoutError as e: print("Error reading response:", e.args)
   return 0
 
@@ -51,7 +48,8 @@ def getdevtype(type):
     type, usb.util.CTRL_TYPE_CLASS, usb.util.CTRL_RECIPIENT_INTERFACE)
 
 def getreportdev(dev):
-  return dev.ctrl_transfer(getdevtype(usb.util.CTRL_IN), 9, 0x300, 0, 64)
+  return [hex(r) for r in dev.ctrl_transfer(getdevtype(usb.util.CTRL_IN),
+    9, 0x300, 0, 64)]
 
 def setdevreport(dev):
   dev.ctrl_transfer(
